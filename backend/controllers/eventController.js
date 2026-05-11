@@ -7,6 +7,7 @@ const { connectedUsers, getIO } = require('../utils/socketStore');
 const { Registration } = require('../models')
 const { createAndSendNotification } = require('../utils/notificationHelper');
 const { creatorLogActivity } = require('../utils/logger');
+const sanitize = require('sanitize-html');
 const fs = require('fs');
 const path = require('path');
 
@@ -51,10 +52,10 @@ const getAllEvents = async (req, res) => {
             order
         } = req.query;
 
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 5;
+        // const page = Number(req.query.page) || 1;
+        // const limit = Number(req.query.limit) || 5;
 
-        const offset = (page - 1) * limit;
+        // const offset = (page - 1) * limit;
 
 
         const filter = {
@@ -180,9 +181,7 @@ const getAllEvents = async (req, res) => {
 
         const events = await Event.findAll({
             where: filter,
-            order: sortOption,
-            limit: limit,
-            offset: offset
+            order: sortOption
         });
 
         if (events.length === 0) {
@@ -455,6 +454,10 @@ const getMyEvents = async (req, res) => {
 
 const createEvent = async (req, res) => {
     try {
+
+        const plainText = { allowedTags: [], allowedAttributes: {} };
+        const richText = { allowedTags: ['b', 'i', 'em', 'strong', 'ul', 'ol'], allowedAttributes: {} };
+
         const {
             title, organizer, category, username,
             venueName, venueAddress, venueMapLink,
@@ -470,16 +473,37 @@ const createEvent = async (req, res) => {
 
         const event = await Event.create({
             eventCode: generateEventCode(),
-            title, organizer, category, username,
-            venueName, venueAddress, venueMapLink,
-            priceAmount, priceCurrency, isEarlyBird,
-            city, eventTimeStart, eventTimeEnd, numberOfGuests,
-            capacityTotal,
+            // --- plain text fields ---
+            title: clean(title),
+            organizer: clean(organizer),
+            category: clean(category),
+            username: clean(username),
+            venueName: clean(venueName),
+            venueAddress: clean(venueAddress),
+            city: clean(city),
+            prerequisites: clean(prerequisites),
+            tags: clean(tags),
+
+            // --- rich text fields (allow basic formatting) ---
+            shortDescription: clean(shortDescription, richText),
+            fullDescription: clean(fullDescription, richText),
+            agenda: clean(agenda, richText),
+
+            // --- these don't need sanitization, just pass through ---
+            venueMapLink,        // URL — validate separately if needed
+            priceAmount,         // number
+            priceCurrency,       // number/code
+            isEarlyBird,         // boolean
+            eventTimeStart,      // date
+            eventTimeEnd,        // date
+            numberOfGuests,      // number
+            capacityTotal,       // number
             capacityRemaining: capacityTotal,
-            eventDate,
-            shortDescription, fullDescription,
-            agenda, prerequisites, tags,
-            fileUpload, registrationDeadline, visibleFrom, bookingOpenDate,
+            eventDate,           // date
+            registrationDeadline,
+            visibleFrom,
+            bookingOpenDate,
+            fileUpload,
             userId: req.user.id
         });
 
@@ -490,11 +514,6 @@ const createEvent = async (req, res) => {
             action: 'EVENT_CREATED',
             role: req.user.role
         });
-
-        // creatorLogActivity(req, event, 'EVENT INFORMATION UPDATED', req.user.role);
-
-
-        // creatorLogActivity(req, event, 'EVENT_CREATED', req.user.role);
 
         return successResponse(res, "Event created", event);
     }

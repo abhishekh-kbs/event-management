@@ -77,4 +77,26 @@ const forgotPassBtnLimiter = rateLimit({
     }
 });
 
-module.exports = { registerLimiter, loginLimiter, applyLimiter, editBtnLimiter, createBtnLimiter, deleteBtnLimiter, forgotPassBtnLimiter };
+const verifyOtpLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 50,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: 'Too many attemps. Please try again in 45 secons'
+    }
+});
+
+const resetBtnLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 50,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: 'Too many attemps. Please try again in 45 secons'
+    }
+});
+
+module.exports = { registerLimiter, loginLimiter, applyLimiter, editBtnLimiter, createBtnLimiter, verifyOtpLimiter, resetBtnLimiter, deleteBtnLimiter, forgotPassBtnLimiter };

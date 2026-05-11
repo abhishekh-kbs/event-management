@@ -7,6 +7,7 @@ const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { userLogActivity, creatorLogActivity } = require('../utils/logger');
 const { createAndSendNotification } = require('../utils/notificationHelper')
 const SECRET = process.env.JWT_SECRET;
+const sanitize = require('sanitize-html');
 
 const otpStore = {};
 
@@ -32,6 +33,9 @@ const user = async (req, res) => {
 
 const register = async (req, res) => {
     try {
+        const plainText = { allowedTags: [], allowedAttributes: {} };
+        const richText = { allowedTags: ['b', 'i', 'em', 'strong', 'ul', 'ol'], allowedAttributes: {} };
+
         const { username, email, password, phone_number, role } = req.body;
 
         if (!username || !email || !password || !role) {
@@ -57,14 +61,12 @@ const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // create user in AIVEN
-        // Sequelize automatically handles the ID and Timestamps
         const newUser = await User.create({
-            username,
-            email,
+            username: clean(username),
+            email: req.body.email?.trim().toLowerCase(),
             password: hashedPassword,
-            phone_number,
-            role
+            phone_number: clean(phone_number),
+            role: clean(role)
         });
 
         console.log("User saved to Aiven!");
@@ -104,8 +106,12 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
+        const plainText = { allowedTags: [], allowedAttributes: {} };
+        const richText = { allowedTags: ['b', 'i', 'em', 'strong', 'ul', 'ol'], allowedAttributes: {} };
 
         const { email, password, rememberMe } = req.body;
+
+        const cleanEmail = email?.trim().toLowerCase();
 
         const requiredFields = { email, password };
 
@@ -117,7 +123,7 @@ const login = async (req, res) => {
 
         const user = await User.findOne(
             {
-                where: { email, isDeleted: false }
+                where: { email: cleanEmail, isDeleted: false }
             });
 
         if (!user) {

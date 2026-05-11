@@ -64,9 +64,13 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 app.set('trust proxy', 1);
 
-app.use(helmet({
-    contentSecurityPolicy: false,
-}));
+app.use(
+    helmet({
+        contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false,
+        crossOriginResourcePolicy: false,
+    })
+);
 
 app.use(cors({
     origin: ["http://localhost:5173",

@@ -192,7 +192,6 @@
  *         description: Password reset successful
  */
 
-
 /**
  * @swagger
  * /api/auth/delete:
@@ -249,7 +248,7 @@ const { register, user, login, getProfile, logout, updateProfile, onBoardUser, f
 
 const { verifyToken } = require('../middleware/authMiddleware.js');
 
-const { registerLimiter, loginLimiter, forgotPassBtnLimiter } = require('../middleware/rateLimiter.js');
+const { registerLimiter, loginLimiter, forgotPassBtnLimiter, verifyOtpLimiter, resetBtnLimiter, deleteBtnLimiter } = require('../middleware/rateLimiter.js');
 
 const upload = require('../utils/upload');
 
@@ -261,9 +260,9 @@ router.put('/profile/update', verifyToken, updateProfile);
 router.post('/logout', verifyToken, logout);
 router.post('/onboarding', verifyToken, onBoardUser);
 router.post('/forgot-password', forgotPassBtnLimiter, forgotPassword);
-router.post('/verifyOtp', verifyOtp);
-router.post('/reset-password', resetPassword);
-router.delete('/delete', verifyToken, deleteUser);
+router.post('/verifyOtp', verifyOtpLimiter, verifyOtp);
+router.post('/reset-password', resetBtnLimiter, resetPassword);
+router.delete('/delete', deleteBtnLimiter, verifyToken, deleteUser);
 
 module.exports = router;
 
