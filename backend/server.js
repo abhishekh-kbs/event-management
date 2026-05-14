@@ -26,9 +26,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:5173",
-            "http://192.168.5.129:5173",
-            "http://192.168.5.212:5173"],
+        origin: process.env.ALLOWED_ORIGINS.split(','),
         methods: ['GET', 'POST'],
         credentials: true
     }
@@ -73,9 +71,7 @@ app.use(
 );
 
 app.use(cors({
-    origin: ["http://localhost:5173",
-        "http://192.168.5.129:5173",
-        "http://192.168.5.212:5173"],
+    origin: process.env.ALLOWED_ORIGINS.split(','),
     credentials: true
 }));
 

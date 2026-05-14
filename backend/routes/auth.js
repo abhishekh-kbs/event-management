@@ -243,6 +243,9 @@
 
 const express = require('express');
 const router = express.Router();
+const validate = require('../middleware/validate');
+const { registerSchema, loginSchema, updateProfileSchema, forgotPasswordSchema, verifyOtpSchema, resetPasswordSchema } = require('../validator/auth.validator');
+
 
 const { register, user, login, getProfile, logout, updateProfile, onBoardUser, forgotPassword, verifyOtp, resetPassword, deleteUser, listedTokens } = require('../controllers/authController.js');
 
@@ -252,16 +255,16 @@ const { registerLimiter, loginLimiter, forgotPassBtnLimiter, verifyOtpLimiter, r
 
 const upload = require('../utils/upload');
 
-router.post('/register', registerLimiter, register);
+router.post('/register', validate(registerSchema), registerLimiter, register);
 router.get('/user', user);
 router.post('/login', loginLimiter, login);
 router.get('/profile', verifyToken, getProfile);
-router.put('/profile/update', verifyToken, updateProfile);
+router.put('/profile/update', verifyToken, validate(updateProfileSchema), updateProfile);
 router.post('/logout', verifyToken, logout);
 router.post('/onboarding', verifyToken, onBoardUser);
-router.post('/forgot-password', forgotPassBtnLimiter, forgotPassword);
-router.post('/verifyOtp', verifyOtpLimiter, verifyOtp);
-router.post('/reset-password', resetBtnLimiter, resetPassword);
+router.post('/forgot-password', forgotPassBtnLimiter, validate(forgotPasswordSchema), forgotPassword);
+router.post('/verifyOtp', verifyOtpLimiter, validate(verifyOtpSchema), verifyOtp);
+router.post('/reset-password', resetBtnLimiter, validate(resetPasswordSchema), resetPassword);
 router.delete('/delete', deleteBtnLimiter, verifyToken, deleteUser);
 
 module.exports = router;

@@ -653,9 +653,7 @@ const deleteEvent = async (req, res) => {
             return errorResponse(res, 'Event not found', 404);
         }
 
-        if (Number(event.userId) !== Number(loggedInUserId)) {
-            return errorResponse(res, 'Not authorized', 403);
-        }
+
 
         const owner = await User.findByPk(loggedInUserId);
         if (!owner) {

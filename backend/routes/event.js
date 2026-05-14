@@ -337,7 +337,6 @@
  *         description: Event not found
  */
 
-
 /**
  * @swagger
  * /api/events/{id}:
@@ -383,13 +382,13 @@
  *         description: Event not found
  */
 
-
-
 const express = require('express');
 const router = express.Router();
 const { isCreator, verifyToken } = require('../middleware/authMiddleware.js');
 const { editBtnLimiter, createBtnLimiter, deleteBtnLimiter } = require('../middleware/rateLimiter.js');
 const upload = require('../utils/upload');
+const validate = require('../middleware/validate');
+const { createEventSchema, updateEventSchema } = require('../validator/event.validator')
 const {
     events,
     getAllEvents,
@@ -404,13 +403,13 @@ router.get('/events', events);
 router.get('/view-events', getAllEvents);
 router.get('/my-events', verifyToken, getMyEvents);
 router.post(
-    '/createEvents', verifyToken,
+    '/createEvents', verifyToken, validate(createEventSchema),
     isCreator, createBtnLimiter,
     upload.single('fileUpload'),
     createEvent
 );
 router.get('/:id', getEventById);
-router.put('/:id', verifyToken, isCreator, editBtnLimiter, upload.single('fileUpload'), updateEvent);
+router.put('/:id', verifyToken, validate(updateEventSchema), isCreator, editBtnLimiter, upload.single('fileUpload'), updateEvent);
 router.delete('/:id', verifyToken, isCreator, deleteBtnLimiter, deleteEvent);
 
 module.exports = router;
