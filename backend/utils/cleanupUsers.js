@@ -5,7 +5,7 @@ const { User, Event, AccountDeletionFeedback } = require('../models');
 const scheduleUserCleanup = () => {
     cron.schedule('0 0 * * *', async () => {
         try {
-            const threeDaysAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+            const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 
             const deleted = await User.unscoped().destroy({
                 where: {
@@ -26,7 +26,7 @@ const scheduleUserCleanup = () => {
 const accountDeletionFeedbackCleanup = () => {
     cron.schedule('0 0 * * *', async () => {
 
-        const tenDaysAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+        const tenDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 
         const user = await User.findAll({
             where: {
@@ -52,15 +52,23 @@ const scheduleEventCleanup = () => {
     cron.schedule('0 0 * * *', async () => {
 
         try {
-            const threeDaysAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
-            const toDelete = await Event.unscoped().findAll({
+            const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+            // const toDelete = await Event.unscoped().findAll({
+            //     where: {
+            //         isDeleted: true,
+            //         deletedAt: { [Op.lte]: threeDaysAgo }
+            //     }
+            // });
+
+            const deleted = await Event.unscoped().destroy({
                 where: {
                     isDeleted: true,
                     deletedAt: { [Op.lte]: threeDaysAgo }
                 }
             });
 
-            console.log('Permanantly deleted all the events which were soft deleted before 3 days');
+            console.log(`Permanently deleted ${deleted} events soft-deleted 3+ days ago`);
+
 
         }
         catch (err) {

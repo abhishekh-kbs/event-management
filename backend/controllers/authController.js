@@ -122,17 +122,6 @@ const login = async (req, res, next) => {
             throw error;
         }
 
-        // // const cleanEmail = email?.trim().toLowerCase();
-        // const requiredFields = { email, password };
-
-        // for (const [key, value] of Object.entries(requiredFields)) {
-        //     if (!value) {
-        //         const error = new Error(`${key} is mising, please enter`);
-        //         error.statusCode;
-        //         throw error;
-        //     }
-        // }
-
         const user = await User.findOne(
             {
                 where: { email, isDeleted: false }

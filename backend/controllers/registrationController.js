@@ -7,12 +7,12 @@ const { sendNotification, broadcastNotification } = require('../utils/socket');
 const { connectedUsers, getIO } = require('../utils/socketStore');
 const { createAndSendNotification } = require('../utils/notificationHelper')
 const { creatorLogActivity, userLogActivity } = require('../utils/logger');
+const { redisClient } = require('../config/redisClient');
 
 const applyForEvent = async (req, res) => {
     try {
         const eventId = req.params.id;
         const userId = req.user.id;
-
 
         const user = await User.findOne
             ({
@@ -271,6 +271,21 @@ const cancelApplication = async (req, res) => {
 const getMyApplications = async (req, res) => {
     try {
 
+        const cacheKey = `registrations:${JSON.stringify(req.user.id)}`;
+
+        const cachedApplications = await redisClient.get(cacheKey);
+
+        if (cachedApplications) {
+            console.log("CACHE HIT");
+            return successResponse(
+                res,
+                "Events fetched from cache",
+                JSON.parse(cachedApplications)
+            );
+        }
+
+        console.log("CACHE MISS - DB HIT");
+
         const registrations = await Registration.findAll({
             where: { userId: req.user.id },
             include: [
@@ -285,6 +300,14 @@ const getMyApplications = async (req, res) => {
             ],
             order: [['createdAt', 'DESC']]
         });
+
+        await redisClient.setEx(
+            cacheKey,
+            60,
+            JSON.stringify(registrations)
+        );
+
+        console.log("DATA STORED IN REDIS")
 
         return successResponse(res, "Application fetched",
             registrations

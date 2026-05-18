@@ -16,14 +16,13 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger/swagger');
 const logsRouter = require('./routes/logs');
 const errorHandler = require('./middleware/errorHandler');
+const { connectRedis } = require('./config/redisClient');
 
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/event');
 const notificationRoutes = require('./routes/notification');
 
 const app = express();
-
-
 
 const server = http.createServer(app);
 
@@ -34,7 +33,6 @@ const io = new Server(server, {
         credentials: true
     }
 });
-
 
 setIO(io);
 
@@ -63,7 +61,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar {background-color:  #1a1a2e}'
 }));
 
-
 app.set('trust proxy', 1);
 
 app.use(
@@ -89,10 +86,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/logs', logsRouter);
 
-
 app.use(errorHandler);
-
-
 
 app.get('/', (req, res) => {
     res.send('Server is working');
@@ -105,23 +99,45 @@ startEventReminder();
 
 const PORT = process.env.PORT || 4000;
 
+const startServer = async () => {
+    try {
+        await db.sequelize.authenticate();
+        console.log("DB connected");
 
-db.sequelize.authenticate()
-    .then(() => {
-        console.log('DB connected');
-        return db.sequelize.sync({ logging: false });
-    })
-    .then(() => {
+        await connectRedis();
 
-        console.log('Tables synced');
+        await db.sequelize.sync({ logging: false });
 
         server.listen(PORT, "0.0.0.0", () => {
             console.log(`Server running at http://localhost:${PORT}`);
         });
-    })
-    .catch((err) => {
-        console.error('Startup error:', err.message);
-    });
+    }
+    catch (err) {
+        console.log(`Startup error: ${err.message}`);
+    }
+};
+
+startServer();
+
+// db.sequelize.authenticate()
+//     .then(() => {
+//         console.log('DB connected');
+
+//         return connectRedis();
+//     })
+//     .then(() => {
+//         console.log("Redis connected");
+//         return db.sequelize.sync({ logging: false });
+//     })
+//     .then(() => {
+
+//         server.listen(PORT, "0.0.0.0", () => {
+//             console.log(`Server running at http://localhost:${PORT}`);
+//         });
+//     })
+//     .catch((err) => {
+//         console.error('Startup error:', err.message);
+//     });
 
 
 

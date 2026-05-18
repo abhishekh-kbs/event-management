@@ -11,6 +11,8 @@ const fs = require('fs');
 const path = require('path');
 const sanitize = require('sanitize-html');
 const { clean, richText } = require('../utils/sanitize');
+const { redisClient } = require('../config/redisClient');
+// const { get, set, del } = require('../utils/cache');
 
 
 
@@ -39,6 +41,30 @@ const events = async (req, res) => {
 
 const getAllEvents = async (req, res) => {
     try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+
+        const offset = (page - 1) * limit;
+
+        // const events = await Event.findAll({
+        //     
+        // });
+
+        const cacheKey = `events:${JSON.stringify(req.query)}`;
+
+        const cachedEvents = await redisClient.get(cacheKey);
+
+        if (cachedEvents) {
+            console.log("CACHE HIT");
+            return successResponse(
+                res,
+                "Events fetched from cache",
+                JSON.parse(cachedEvents)
+            );
+        }
+
+        console.log("CACHE MISS - DB HIT");
+
         const {
             category,
             city,
@@ -53,12 +79,6 @@ const getAllEvents = async (req, res) => {
             sortBy,
             order
         } = req.query;
-
-        // const page = Number(req.query.page) || 1;
-        // const limit = Number(req.query.limit) || 5;
-
-        // const offset = (page - 1) * limit;
-
 
         const filter = {
             isDeleted: false
@@ -86,11 +106,7 @@ const getAllEvents = async (req, res) => {
             return errorResponse(res, "endDate must be a valid date", 400);
         }
 
-        if (
-            startDate &&
-            endDate &&
-            new Date(startDate) > new Date(endDate)
-        ) {
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
             return errorResponse(res, "startDate cannot be greater than endDate", 400);
         }
 
@@ -186,9 +202,6 @@ const getAllEvents = async (req, res) => {
             order: sortOption
         });
 
-        if (events.length === 0) {
-            return successResponse(res, "No events found", []);
-        }
 
         const eventWithStats = events.map(event => {
             const data = event.toJSON();
@@ -223,11 +236,20 @@ const getAllEvents = async (req, res) => {
                 deadlinePassed,
                 canApply,
 
+
                 totalApplied: total - remaining,
                 spotsLeft: remaining,
                 isFull: remaining === 0 && total > 0
             };
         });
+
+        await redisClient.setEx(
+            cacheKey,
+            60,
+            JSON.stringify(eventWithStats)
+        );
+
+        console.log("DATA STORED IN REDIS")
 
         return successResponse(
             res,
@@ -240,139 +262,31 @@ const getAllEvents = async (req, res) => {
     }
 };
 
-// const getAllEvents = async (req, res) => {
-//     try {
 
-//         const { category, city, venueName, eventCode, title, state, minPrice, maxPrice, startDate, endDate, sortBy, order } = req.query;
 
-//         let filter = {
-//             isDeleted: false //Always fetch only active(not deleted) events
-//         };
 
-//         if (category) {
-//             filter.category = category;
-//         }
 
-//         if (city) {
-//             filter.city = {
-//                 [Op.iLike]: `%${city}%`
-//             };
-//         }
 
-//         if (title) {
-//             filter.title = {
-//                 [Op.iLike]: `%${title}%` // iLike helps in partial matching and also makes the query work in case-insensitive and it only works in PostgreSQL
-//             };
-//         }
 
-//         if (venueName) {
-//             filter.venueName = {
-//                 [Op.iLike]: `%${venueName}%`
-//             };
-//         }
-//         if (eventCode) {
-//             filter.eventCode = eventCode;
-//         }
-//         if (state) {
-//             filter.state = state;
-//         }
-
-//         if (minPrice && maxPrice) {
-//             filter.priceAmount = {
-//                 [Op.between]: [Number(minPrice), Number(maxPrice)]
-//             };
-//         }
-//         else if (minPrice) {
-//             filter.priceAmount = {
-//                 [Op.gte]: Number(minPrice)
-//             };
-//         }
-//         else if (maxPrice) {
-//             filter.priceAmount = {
-//                 [Op.lte]: Number(maxPrice)
-//             };
-//         }
-
-//         if (startDate && endDate) {
-//             filter.eventDate = {
-//                 [Op.between]: [new Date(startDate), new Date(endDate)]
-//             };
-//         }
-//         else if (startDate) {
-//             filter.eventDate = {
-//                 [Op.gte]: new Date(startDate)
-//             };
-//         }
-//         else if (endDate) {
-//             filter.eventDate = {
-//                 [Op.lte]: new Date(endDate)
-//             };
-//         }
-
-//         let sortOption = [];
-
-//         const allowedSortField = ["priceAmount", "eventDate", "title"];
-
-//         if (sortBy && allowedSortField.includes(sortBy)) {
-//             sortOption.push([sortBy, order === "desc" ? "DESC" : "ASC"]);
-//         }
-//         else {
-//             sortOption.push(["createdAt", "DESC"]);
-//         }
-
-//         const events = await Event.findAll({
-//             where: filter,
-//             order: sortOption
-//         });
-
-//         const eventWithStats = events.map(event => {
-//             const data = event.toJSON();
-//             const total = data.capacityTotal || 0;
-//             const remaining = data.capacityRemaining || 0;
-//             const now = new Date();
-//             const visibilityDate = new Date(event.visibleFrom)
-//             const bookingOpenDate = new Date(event.bookingOpenDate);
-
-//             const deadline = data.registrationDeadline
-//                 ? new Date(data.registrationDeadline)
-//                 : null;
-
-//             const isVisible = now >= visibilityDate;
-//             const bookingOpensFrom = now >= bookingOpenDate;
-//             const deadlinePassed = deadline ? now > deadline : false;
-//             const canApply = bookingOpensFrom && !deadlinePassed;
-
-//             return {
-//                 ...data,
-//                 // Added fields manually to print instead of all the fields
-//                 // id: data.id,
-
-//                 isVisible,
-//                 bookingOpensFrom,
-//                 deadlinePassed,
-//                 canApply,
-
-//                 // applicationStatus: registration ? registration.status : null,
-//                 totalApplied: total - remaining,
-//                 spotsLeft: remaining,
-//                 isFull: remaining === 0 && total > 0,
-
-//                 registrationDeadline: data.registrationDeadline,
-
-//                 // if deadline exists, it will check if now('currentTime') is greater than the given deadline - if yes, then it will return false(like the event application deadline time is passed)
-
-//                 // here the logic says that the user can only apply when the current time is before or equal to deadline, that means if the deadline is 10 AM, 04 and if the current time(now is 10 AM, 03) than canApply will work
-//             };
-//         })
-//         return successResponse(res, "Events fetched successfully", eventWithStats);
-//     }
-//     catch (err) {
-//         return errorResponse(res, `Internal Server Error: ${err.message}`);
-//     }
-// };
 
 const getEventById = async (req, res) => {
     try {
+
+        const cacheKey = `events:${JSON.stringify(req.params)}`;
+
+        const cachedEvents = await redisClient.get(cacheKey);
+
+        if (cachedEvents) {
+            console.log("CACHE HIT");
+            return successResponse(
+                res,
+                "Events fetched from cache",
+                JSON.parse(cachedEvents)
+            );
+        }
+
+        console.log("CACHE MISS - DB HIT");
+
         const events = await Event.findOne({
             where: {
                 id: req.params.id,
@@ -383,6 +297,16 @@ const getEventById = async (req, res) => {
         if (!events) {
             return errorResponse(res, "Event does not exist");
         }
+
+        // await redisClient.set(cacheKey, events, 3600);  // cache for 1 hour
+
+        await redisClient.set(
+            cacheKey,
+            60,
+            JSON.stringify(events)
+        );
+
+        console.log("DATA STORED IN REDIS")
         return successResponse(res, "List of events by ID", events);
     }
     catch (err) {
@@ -654,7 +578,6 @@ const deleteEvent = async (req, res) => {
         }
 
 
-
         const owner = await User.findByPk(loggedInUserId);
         if (!owner) {
             return errorResponse(res, "Owner invalid")
@@ -675,7 +598,7 @@ const deleteEvent = async (req, res) => {
 
         await event.update({
             isDeleted: true,
-            isActive: false,
+            isActive: true,
             deletedAt: new Date()
         });
 

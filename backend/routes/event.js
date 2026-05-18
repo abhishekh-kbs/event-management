@@ -248,6 +248,7 @@
  *       401:
  *         description: Unauthorized
  */
+
 /**
  * @swagger
  * /api/events/{id}:

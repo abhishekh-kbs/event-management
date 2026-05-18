@@ -1,5 +1,6 @@
 const { Notification } = require('../models');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
+const { redisClient } = require('../config/redisClient');
 
 const getAllNotifications = async (req, res) => {
     try {
@@ -41,11 +42,34 @@ const getUnreadNotifications = async (req, res) => {
 
 const getUnreadCount = async (req, res) => {
     try {
+        const cacheKey = `notifications:unread-count:user:${req.user.id}`;
+
+        const cachedCount = await redisClient.get(cacheKey);
+
+        if (cachedCount) {
+            console.log("CACHE HIT");
+            return successResponse(
+                res,
+                "Events fetched from cache",
+                { count: Number(cachedCount) }
+            );
+        }
+
+        console.log("CACHE MISS - DB HIT");
+
         const count = await Notification.count(
             {
                 where: { userId: req.user.id, isRead: false }
             }
         );
+
+        await redisClient.setEx(
+            cacheKey,
+            60,
+            String(count)
+        );
+
+        console.log("DATA STORED IN REDIS")
         return successResponse(res, "Notifications unread", { unreadCount: count });
     }
 
@@ -57,6 +81,11 @@ const getUnreadCount = async (req, res) => {
 const markAsRead = async (req, res) => {
     try {
 
+        await redisClient.del(`notifications:unread-count:user:${req.user.id}`);
+        await redisClient.del(`notifications:unread-list:user:${req.user.id}`);
+        await redisClient.del(`notifications:all:user:${req.user.id}`);
+
+
         const [updatedCount] = await Notification.update(
             { isRead: true },
             { where: { id: req.params.id, userId: req.user.id } }
@@ -65,6 +94,8 @@ const markAsRead = async (req, res) => {
         if (updatedCount === 0) {
             return errorResponse(res, "Notification not found", 404);
         }
+
+
         return successResponse(res, "Notification marked as read", updatedCount);
     }
     catch (err) {

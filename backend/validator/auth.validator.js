@@ -5,19 +5,20 @@ const registerSchema = Joi.object({
     username: Joi.string().min(3).max(50).required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
-    role: Joi.string().min(1).required(),
-    phone_number: Joi.number().min(10).required()
+    phone_number: Joi.number().min(10).optional().allow(null, ''),
+    role: Joi.string().min(1).required()
 });
 
 
 const loginSchema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
+    rememberMe: Joi.boolean().required()
 });
 
 const updateProfileSchema = Joi.object({
     username: Joi.string().min(3).max(50).required(),
-    phone_number: Joi.number().min(10).required(),
+    phone_number: Joi.number().min(10).optional(),
     bio: Joi.string().min(50).required(),
     notifyEmail: Joi.boolean().required(),
     notifyPush: Joi.boolean().required()
