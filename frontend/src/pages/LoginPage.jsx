@@ -6,6 +6,7 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorlogin, setErrorLogin] = useState("");
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [rememberMe, setRememberMe] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -21,22 +22,23 @@ function LoginPage() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, rememberMe }),
       });
       const data = await res.json();
-      localStorage.setItem("username", data.data.user.username);
-      localStorage.setItem("userId", data.data.user.id);
-      localStorage.setItem("role", data.data.user.role);
-      localStorage.setItem("token", data.data.token);
       if (!data.success) {
         setErrorLogin(data.message || "Invalid credentials");
         setLoading(false);
         return;
       }
+      localStorage.setItem("username", data.data.user.username);
+      localStorage.setItem("userId", data.data.user.id);
+      localStorage.setItem("role", data.data.user.role);
+      localStorage.setItem("token", data.data.token);
+
       if (data.success) navigate("/dashboard");
     } catch (error) {
       console.log(error);
-      setErrorLogin("Something went wrong. Please try again.");
+      setErrorLogin("Invalid credentials");
     } finally {
       setLoading(false);
     }
@@ -145,14 +147,43 @@ function LoginPage() {
                 }
                 className="w-full bg-white/[0.04] border border-white/[0.09] rounded-[9px] px-3.5 py-2.5 text-[13px] text-[#e8e3d8] placeholder-white/20 outline-none focus:border-violet-500/50 focus:bg-violet-500/[0.06] focus:ring-2 focus:ring-violet-500/10 transition-all"
               />
-              <button
+
+              {/* Remember me : */}
+              <div className="flex items-center gap-2 mt-3">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-violet-500 bg-white/[0.04] border border-white/[0.09] rounded cursor-pointer"
+                />
+                <label
+                  htmlFor="rememberMe"
+                  className="text-[9px] tracking-[0.12em] uppercase text-white/30 cursor-pointer"
+                >
+                  Remember me
+                </label>
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgotpassword")}
+                  className="mt-1.5 ml-auto block text-[10px] text-white/20 hover:text-white/50 transition-colors bg-transparent border-none cursor-pointer"
+                >
+                  Forgot password?
+                </button>
+              </div>
+              {/* <a href="/forgot-password" className="text-[9px] tracking-[0.12em] uppercase text-white/30 hover:text-violet-400 transition-colors">
+                Forgot password?
+              </a> */}
+
+              {/* <button
                 type="button"
                 onClick={() => navigate("/forgotpassword")}
                 className="mt-1.5 ml-auto block text-[10px] text-white/20 hover:text-white/50 transition-colors bg-transparent border-none cursor-pointer"
               >
                 Forgot password?
-              </button>
+              </button> */}
             </div>
+
 
             {/* Error */}
             <p className="text-xs text-red-400/80 text-center min-h-[16px] -mt-1">

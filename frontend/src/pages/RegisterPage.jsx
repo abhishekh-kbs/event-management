@@ -14,7 +14,9 @@ function RegisterPage() {
     username: "",
     email: "",
     password: "",
+    phone_number: "",
     role: "",
+
   });
 
   const HandleSubmit = async (e) => {
@@ -80,11 +82,17 @@ function RegisterPage() {
       key: "email",
     },
     {
+      label: "Phone",
+      type: "tel",
+      placeholder: "Enter your phone number",
+      key: "phone_number",
+    },
+    {
       label: "Password",
       type: "password",
       placeholder: "Create a password",
       key: "password",
-    },
+    }
   ];
 
   return (
@@ -163,18 +171,16 @@ function RegisterPage() {
                 return (
                   <label
                     key={value}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-[10px] cursor-pointer transition-all text-[12px] font-medium border ${
-                      active
-                        ? "bg-violet-500/15 border-violet-500/30 text-violet-400"
-                        : "bg-white/[0.03] border-white/[0.08] text-white/35 hover:bg-white/[0.06]"
-                    }`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-[10px] cursor-pointer transition-all text-[12px] font-medium border ${active
+                      ? "bg-violet-500/15 border-violet-500/30 text-violet-400"
+                      : "bg-white/[0.03] border-white/[0.08] text-white/35 hover:bg-white/[0.06]"
+                      }`}
                   >
                     <div
-                      className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                        active
-                          ? "border-violet-500 bg-violet-500"
-                          : "border-white/20"
-                      }`}
+                      className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 ${active
+                        ? "border-violet-500 bg-violet-500"
+                        : "border-white/20"
+                        }`}
                     >
                       {active && (
                         <div className="w-1.5 h-1.5 rounded-full bg-white" />
