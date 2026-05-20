@@ -21,6 +21,7 @@ const { connectRedis } = require('./config/redisClient');
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/event');
 const notificationRoutes = require('./routes/notification');
+const chatRoutes = require('./routes/chatRoutes');
 
 const app = express();
 
@@ -85,6 +86,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/logs', logsRouter);
+app.use('/api', chatRoutes);
 
 app.use(errorHandler);
 
