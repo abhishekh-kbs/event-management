@@ -15,6 +15,7 @@ import DashboardUser from "./pages/DashboardUser";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
 import Payments from "./pages/Payments";
+import ChatBot from "./components/chatbot/ChatBot";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="/payments" element={<Payments />} />
           <Route path="/bookings" element={<Bookings />} />
         </Route>
+
 
         <Route
           path="/"
@@ -84,7 +86,11 @@ function App() {
             </PublicRoute>
           }
         />
+
       </Routes>
+
+      <ChatBot />
+
     </>
   );
 }
