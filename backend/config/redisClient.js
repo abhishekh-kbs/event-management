@@ -20,3 +20,4 @@ const connectRedis = async () => {
 };
 
 module.exports = { redisClient, connectRedis };
+

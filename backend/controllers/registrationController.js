@@ -94,6 +94,9 @@ const applyForEvent = async (req, res) => {
             notes: req.body?.notes || null
         });
 
+        await redisClient.del(`registrations:${userId}`);
+
+
         const newRemaining = event.capacityRemaining - numberOfGuests;
         await event.update({
             capacityRemaining: newRemaining
@@ -271,7 +274,7 @@ const cancelApplication = async (req, res) => {
 const getMyApplications = async (req, res) => {
     try {
 
-        const cacheKey = `registrations:${JSON.stringify(req.user.id)}`;
+        const cacheKey = `registrations:${req.user.id}`;
 
         const cachedApplications = await redisClient.get(cacheKey);
 
