@@ -11,6 +11,8 @@ function DashboardUser() {
   const [activity, setActivity] = useState([]);
   const [appliedEvents, setAppliedEvents] = useState([]);
   const [registrations, setRegistrations] = useState(0);
+  const [refresh, setRefresh] = useState(0);
+
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -25,6 +27,7 @@ function DashboardUser() {
     return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
   }
 
+
   useEffect(() => {
     async function checkApplications() {
       try {
@@ -32,20 +35,45 @@ function DashboardUser() {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        const now = new Date();
-        const filtered = (data?.data || []).filter((event) => {
-          const d = new Date(event.Event?.eventDate);
-          return !isNaN(d) && d > now;
-        });
-        setRegistrations(filtered.length);
-        setActivity(filtered);
-        setAppliedEvents(filtered.map((item) => item.eventId));
+
+        const allRegistrations = data?.data || [];
+
+        setRegistrations(allRegistrations.length);
+        setActivity(allRegistrations);
+        setAppliedEvents(allRegistrations.map((item) => item.eventId));
+
       } catch (err) {
         console.log(err);
       }
     }
     checkApplications();
-  }, []);
+  }, [refresh]);
+
+
+
+  // useEffect(() => {
+  //   async function checkApplications() {
+  //     try {
+  //       const res = await fetch(`${apiUrl}/api/registrations/my-applications`, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
+  //       const data = await res.json();
+  //       const now = new Date();
+  //       const filtered = (data?.data || []).filter((event) => {
+  //         const d = new Date(event.Event?.eventDate);
+  //         return !isNaN(d) && d > now;
+  //       });
+  //       setRegistrations(filtered.length);
+  //       setActivity(filtered);
+  //       setAppliedEvents(filtered.map((item) => item.eventId));
+  //     } catch (err) {
+  //       console.log(err);
+  //     }
+  //   }
+  //   checkApplications();
+  // }, [refresh]);
+
+
 
   useEffect(() => {
     async function fetchEvents() {
@@ -63,6 +91,37 @@ function DashboardUser() {
     fetchEvents();
   }, []);
 
+  // async function handleEventApplication(applyFormData) {
+  //   try {
+  //     const res = await fetch(
+  //       `${apiUrl}/api/registrations/apply/${selectedEventId}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       },
+  //     );
+
+  //     const data = await res.json();
+  //     if (data.success) {
+  //       setRefresh(prev => prev + 1);
+  //     }
+
+  //     if (!res.ok) return;
+  //     setApplicants((prev) => {
+  //       const existing = prev[selectedEventId] || [];
+  //       if (existing.some((a) => a.userId === userId)) return prev;
+  //       return { ...prev, [selectedEventId]: [...existing, { userId }] };
+  //     });
+  //     setAppliedEvents((prev) => [...prev, selectedEventId]);
+  //     setShowApplyForm(false);
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // }
+
   async function handleEventApplication(applyFormData) {
     try {
       const res = await fetch(
@@ -73,17 +132,27 @@ function DashboardUser() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(applyFormData),
         },
       );
-      if (!res.ok) return;
-      setApplicants((prev) => {
-        const existing = prev[selectedEventId] || [];
-        if (existing.some((a) => a.userId === userId)) return prev;
-        return { ...prev, [selectedEventId]: [...existing, { userId }] };
-      });
-      setAppliedEvents((prev) => [...prev, selectedEventId]);
-      setShowApplyForm(false);
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Apply failed:", data.message);
+        return;
+      }
+
+      if (data.success) {
+        setRefresh(prev => prev + 1);
+        setApplicants((prev) => {
+          const existing = prev[selectedEventId] || [];
+          if (existing.some((a) => a.userId === userId)) return prev;
+          return { ...prev, [selectedEventId]: [...existing, { userId }] };
+        });
+        setAppliedEvents((prev) => [...prev, selectedEventId]);
+        setShowApplyForm(false);
+      }
+
     } catch (err) {
       console.error(err);
     }
