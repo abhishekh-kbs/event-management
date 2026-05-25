@@ -17,11 +17,12 @@ const loginSchema = Joi.object({
 });
 
 const updateProfileSchema = Joi.object({
-    username: Joi.string().min(3).max(50).required(),
+    username: Joi.string().min(3).max(50).optional(),
     phone_number: Joi.number().min(10).optional(),
-    bio: Joi.string().min(50).required(),
-    notifyEmail: Joi.boolean().required(),
-    notifyPush: Joi.boolean().required()
+    country: Joi.string().min(1).required()
+    // bio: Joi.string().min(5).required()
+    // notifyEmail: Joi.boolean().required(),
+    // notifyPush: Joi.boolean().required()
 });
 
 const forgotPasswordSchema = Joi.object({

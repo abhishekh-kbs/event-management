@@ -94,7 +94,9 @@ const applyForEvent = async (req, res) => {
             notes: req.body?.notes || null
         });
 
-        await redisClient.del(`registrations:${userId}`);
+
+
+        await redisClient.del(`registrations:${userId}`); // Cache invalidation
 
 
         const newRemaining = event.capacityRemaining - numberOfGuests;

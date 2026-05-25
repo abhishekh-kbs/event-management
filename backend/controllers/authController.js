@@ -10,6 +10,8 @@ const SECRET = process.env.JWT_SECRET;
 const sanitize = require('sanitize-html');
 const { clean, richText } = require('../utils/sanitize');
 const errorHandler = require('../middleware/errorHandler');
+const { redisClient } = require('../config/redisClient');
+
 
 const otpStore = {};
 
@@ -170,8 +172,23 @@ const login = async (req, res, next) => {
     }
 };
 
-const getProfile = async (req, res) => {
+const getProfile = async (req, res, next) => {
     try {
+
+        const cacheKey = `users:${req.user.id}`;
+        // const cacheKey = `users:${JSON.stringify(req.user.id)}`;
+        const cachedUsers = await redisClient.get(cacheKey);
+
+        if (cachedUsers) {
+            console.log("Cache HIT");
+            return successResponse(res,
+                "User profile fetched from cache",
+                { user: JSON.parse(cachedUsers) }
+            );
+        }
+
+        console.log("CACHE MISS - DB HIT");
+
         const user = await User.findOne({
             where: { id: req.user.id },
             attributes: ['id', 'username', 'email', 'phone_number', 'bio', 'photo', 'notifyEmail', 'notifyPush',
@@ -186,8 +203,16 @@ const getProfile = async (req, res) => {
         if (!user) {
             return errorResponse(res, "User not found", 404)
         }
+
+        await redisClient.setEx(
+            cacheKey,
+            60,
+            JSON.stringify(user)
+        )
+
+        console.log("DATA STORED IN REDIS")
+
         return successResponse(res, "Profile fetched successfully", {
-            isOnboarded: user.isOnboarded,
             user
         });
     }
@@ -197,10 +222,10 @@ const getProfile = async (req, res) => {
     }
 };
 
-const updateProfile = async (req, res) => {
+const updateProfile = async (req, res, next) => {
     try {
 
-        const { username, phone_number, bio, notifyEmail, notifyPush } = req.body;
+        const { username, phone_number, bio, country } = req.body;
 
         const user = await User.findByPk(req.user.id);
 
@@ -211,22 +236,22 @@ const updateProfile = async (req, res) => {
         const oldData = {
             username: user.username,
             phone_number: user.phone_number,
-            bio: user.bio,
-            notifyEmail: user.notifyEmail,
-            notifyPush: user.notifyPush
+            bio: user.bio
+            // notifyEmail: user.notifyEmail,
+            // notifyPush: user.notifyPush
         };
 
         const cleanUsername = clean(username);
         const cleanPhone = clean(phone_number);
         const cleanBio = clean(bio);
+        const cleanCountry = clean(country);
 
 
         await user.update({
             username: cleanUsername,
             phone_number: cleanPhone,
             bio: cleanBio,
-            notifyEmail,
-            notifyPush
+            country: cleanCountry
         });
 
         const updatedFields = [];
@@ -243,13 +268,13 @@ const updateProfile = async (req, res) => {
             updatedFields.push(`bio from "${oldData.bio}" to "${bio}"`);
         }
 
-        if (oldData.notifyEmail !== notifyEmail) {
-            updatedFields.push(`email notification preference from "${oldData.notifyEmail}" to "${notifyEmail}"`);
-        }
+        // if (oldData.notifyEmail !== notifyEmail) {
+        //     updatedFields.push(`email notification preference from "${oldData.notifyEmail}" to "${notifyEmail}"`);
+        // }
 
-        if (oldData.notifyPush !== notifyPush) {
-            updatedFields.push(`push notification preference from "${oldData.notifyPush}" to "${notifyPush}"`);
-        }
+        // if (oldData.notifyPush !== notifyPush) {
+        //     updatedFields.push(`push notification preference from "${oldData.notifyPush}" to "${notifyPush}"`);
+        // }
 
         const message = `Hi ${user.username}, your profile was updated.`;
 
@@ -269,6 +294,8 @@ const updateProfile = async (req, res) => {
 
         userLogActivity(req, user, 'USER UPDATED HIS/HER PROFILE', user.role);
 
+        await redisClient.del(`users:${user.id}`)
+
 
         return successResponse(res, "Profile updated successfully", {
             user: {
@@ -276,9 +303,9 @@ const updateProfile = async (req, res) => {
                 name: user.username,
                 email: user.email,
                 phone: user.phone_number,
-                bio: user.bio,
-                notifyEmail: user.notifyEmail,
-                notifyPush: user.notifyPush
+                bio: user.bio
+                // notifyEmail: user.notifyEmail,
+                // notifyPush: user.notifyPush
             }
         })
     }

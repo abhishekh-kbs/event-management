@@ -11,7 +11,11 @@ module.exports = (sequelize, DataTypes) => {
         'NEW_APPLICATION',
         'APPLICATION_STATUS_UPDATED',
         'EVENT_UPDATED',
-        'EVENT_DELETED'
+        'EVENT_DELETED',
+        'NEW_REGISTRATION',      // add
+        'PROFILE_UPDATED',       // add
+        'PASSWORD_CHANGED',      // add
+        'ACCOUNT_DELETED'
       ),
       allowNull: false
     },

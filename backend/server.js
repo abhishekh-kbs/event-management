@@ -22,6 +22,8 @@ const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/event');
 const notificationRoutes = require('./routes/notification');
 const chatRoutes = require('./routes/chatRoutes');
+const productRoutes = require('./routes/product');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 
@@ -87,6 +89,9 @@ app.use('/api/events', eventRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/logs', logsRouter);
 app.use('/api', chatRoutes);
+app.use('/api', productRoutes);
+app.use('/api/payments', paymentRoutes);
+
 
 app.use(errorHandler);
 

@@ -263,12 +263,6 @@ const getAllEvents = async (req, res) => {
 };
 
 
-
-
-
-
-
-
 const getEventById = async (req, res) => {
     try {
 
@@ -483,39 +477,39 @@ const updateEvent = async (req, res) => {
         } = req.body;
 
         const updateEvent = await event.update({
-            eventCode: generateEventCode(),
-            // --- plain text fields ---
-            title: clean(title),
-            organizer: clean(organizer),
-            category: clean(category),
-            username: clean(username),
+            // eventCode: generateEventCode(),
+            // // --- plain text fields ---
+            // title: clean(title),
+            // organizer: clean(organizer),
+            // category: clean(category),
+            // username: clean(username),
             venueName: clean(venueName),
             venueAddress: clean(venueAddress),
             city: clean(city),
-            prerequisites: clean(prerequisites),
-            tags: clean(tags),
+            // prerequisites: clean(prerequisites),
+            // tags: clean(tags),
 
-            // --- rich text fields (allow basic formatting) ---
-            shortDescription: clean(shortDescription, richText),
+            // // --- rich text fields (allow basic formatting) ---
+            // shortDescription: clean(shortDescription, richText),
             fullDescription: clean(fullDescription, richText),
-            agenda: clean(agenda, richText),
+            // agenda: clean(agenda, richText),
 
-            // --- these don't need sanitization, just pass through ---
-            venueMapLink,        // URL — validate separately if needed
-            priceAmount,         // number
-            priceCurrency,       // number/code
-            isEarlyBird,         // boolean
-            eventTimeStart,      // date
-            eventTimeEnd,        // date
-            numberOfGuests,      // number
-            capacityTotal,       // number
-            capacityRemaining: capacityTotal,
+            // // --- these don't need sanitization, just pass through ---
+            // venueMapLink,        // URL — validate separately if needed
+            // priceAmount,         // number
+            // priceCurrency,       // number/code
+            // isEarlyBird,         // boolean
+            // eventTimeStart,      // date
+            // eventTimeEnd,        // date
+            // numberOfGuests,      // number
+            // capacityTotal,       // number
+            // capacityRemaining: capacityTotal,
             eventDate,           // date
-            registrationDeadline,
-            visibleFrom,
-            bookingOpenDate,
-            fileUpload,
-            userId: req.user.id
+            // registrationDeadline,
+            // visibleFrom,
+            // bookingOpenDate,
+            // fileUpload,
+            // userId: req.user.id
         });
 
         for (const reg of registrations) {

@@ -4,12 +4,36 @@ const { redisClient } = require('../config/redisClient');
 
 const getAllNotifications = async (req, res) => {
     try {
+
+        const cacheKey = `notifications:${req.user.id}`;
+
+        const cachedNotifications = await redisClient.get(cacheKey);
+
+        if (cachedNotifications) {
+            console.log("CACHE HIT");
+            return successResponse(
+                res,
+                "Notifications fetched from cache",
+                JSON.parse(cachedNotifications)
+            );
+        }
+
+        console.log("CACHE MISS - DB HIT");
+
         const notifications = await Notification.findAll(
             {
                 where: { userId: req.user.id },
                 order: [['createdAt', 'DESC']]
             }
         );
+
+        await redisClient.setEx(
+            cacheKey,
+            60,
+            JSON.stringify(notifications)
+        )
+
+
 
         return successResponse(res, "Notification fetched", notifications);
     }
@@ -51,7 +75,7 @@ const getUnreadCount = async (req, res) => {
             return successResponse(
                 res,
                 "Events fetched from cache",
-                { count: Number(cachedCount) }
+                { unreadCount: Number(cachedCount) }
             );
         }
 
@@ -71,6 +95,8 @@ const getUnreadCount = async (req, res) => {
 
         console.log("DATA STORED IN REDIS")
         return successResponse(res, "Notifications unread", { unreadCount: count });
+
+        // return successResponse(res, "Notifications unread", { unreadCount: Number(cachedCount) });
     }
 
     catch (err) {
@@ -81,11 +107,6 @@ const getUnreadCount = async (req, res) => {
 const markAsRead = async (req, res) => {
     try {
 
-        await redisClient.del(`notifications:unread-count:user:${req.user.id}`);
-        await redisClient.del(`notifications:unread-list:user:${req.user.id}`);
-        await redisClient.del(`notifications:all:user:${req.user.id}`);
-
-
         const [updatedCount] = await Notification.update(
             { isRead: true },
             { where: { id: req.params.id, userId: req.user.id } }
@@ -95,8 +116,16 @@ const markAsRead = async (req, res) => {
             return errorResponse(res, "Notification not found", 404);
         }
 
+        await redisClient.del(`notifications:${req.user.id}`); // Cache invalidation
+        await redisClient.del(`notifications:unread-count:user:${req.user.id}`);
 
-        return successResponse(res, "Notification marked as read", updatedCount);
+
+        const unreadCount = await Notification.count({
+            where: { userId: req.user.id, isRead: false }
+        });
+
+
+        return successResponse(res, "Notification marked as read", { unreadCount });
     }
     catch (err) {
         return errorResponse(res, `Internal Server Error: ${err.message}`);

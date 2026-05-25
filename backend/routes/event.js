@@ -410,7 +410,7 @@ router.post(
     createEvent
 );
 router.get('/:id', getEventById);
-router.put('/:id', verifyToken, validate(updateEventSchema), isCreator, editBtnLimiter, upload.single('fileUpload'), updateEvent);
+router.patch('/:id', verifyToken, validate(updateEventSchema), isCreator, editBtnLimiter, upload.single('fileUpload'), updateEvent);
 router.delete('/:id', verifyToken, isCreator, deleteBtnLimiter, deleteEvent);
 
 module.exports = router;

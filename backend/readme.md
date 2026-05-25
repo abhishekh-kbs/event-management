@@ -1,25 +1,41 @@
-STEPS to push code into git -
+The Plan
+1. Database changes
+Add price to Events table and create a Cart table:
+Events        → add price field
+Registrations → add paymentId, paymentStatus fields
+Cart          → userId, eventId, addedAt
 
-git add .
-git commit -m "Your clear, descriptive message here"
-git push origin master
+2. Backend — new APIs needed
+POST /api/payments/create-order     → create Razorpay order
+POST /api/payments/verify           → verify payment signature → then register
+POST /api/cart                      → add event to cart
+GET  /api/cart                      → get user's cart
+DELETE /api/cart/:eventId           → remove from cart
+
+3. Frontend flow
+Register Now:
+Click Register → Razorpay modal opens → pay → 
+verify on backend → marked as registered
+Cart:
+Click Save → added to cart → 
+user opens cart → clicks pay → same Razorpay flow
+Waitlist:
+Event full → Join Waitlist → 
+spot opens → socket notification → 
+user pays → registered
+
+4. Razorpay setup
+
+Free test account at razorpay.com
+Get key_id and key_secret
+Install: npm install razorpay on backend
 
 
-GET - http://localhost:4000/api/events/view-events : View all events API updated
-POST - http://localhost:4000/api/events/createEvents: Create event API updated
+Order to build:
 
-
-
-
--> event visible from ( from now till the time booking starts ) if(yes){make the event visible} else{dont}
--> booking starts (if the booking start date starts after comparing now)
--> event date
-
-
-To remove exisiting folder from GITHUB
-
-- git rm -r --cached logs
-- git add .gitignore
-- git commit "" (optional)
-- git push
-
+Razorpay backend setup
+Payment APIs
+DB migrations
+Frontend payment modal
+Cart feature
+Waitlist hook into payments

@@ -255,6 +255,7 @@ const { registerLimiter, loginLimiter, forgotPassBtnLimiter, verifyOtpLimiter, r
 
 const upload = require('../utils/upload');
 
+
 router.post('/register', validate(registerSchema), registerLimiter, register);
 router.get('/user', user);
 router.post('/login', validate(loginSchema), loginLimiter, login);

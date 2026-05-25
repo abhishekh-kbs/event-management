@@ -55,5 +55,8 @@ db.Registration.belongsTo(db.Event, { foreignKey: 'eventId' });
 db.User.hasMany(db.Notification, { foreignKey: 'userId' });
 db.Notification.belongsTo(db.User, { foreignKey: 'userId' });
 
+
+
+
 module.exports = db;
 
