@@ -7,13 +7,14 @@ function ProfilePage() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const [userData, setUserData] = useState({});
+  const [loading, setLoading] = useState(true);
   const [showAccDelForm, setShowAccDelForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
 
   async function handleEditProfile(updatedData) {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${apiUrl}/auth/profile/update`, {
+      const res = await fetch(`${apiUrl}/api/auth/profile/update`, {
         method: "PUT",
         credentials: "include",
         headers: {
@@ -32,7 +33,7 @@ function ProfilePage() {
   async function handleAccountDelete() {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${apiUrl}/auth/delete`, {
+      const res = await fetch(`${apiUrl}/api/auth/delete`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -48,6 +49,7 @@ function ProfilePage() {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
+        console.log("TOKEN:", token);
         const res = await fetch(`${apiUrl}/api/auth/profile`, {
           method: "GET",
           headers: {
@@ -57,6 +59,7 @@ function ProfilePage() {
         });
         const data = await res.json();
         setUserData(data.data.user);
+        setLoading(false);
         console.log(data);
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -65,17 +68,17 @@ function ProfilePage() {
     fetchUser();
   }, []);
 
-  const initials = userData.username
+  const initials = userData?.username
     ? userData.username
-        .split("_")
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split("_")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "?";
 
   const fields = [
-    { label: "Username", value: userData.username, icon: "ti-user" },
+    { label: "Username", value: userData.username, icon: "ti-username" },
     { label: "Phone", value: userData.phone_number, icon: "ti-phone" },
     { label: "Email", value: userData.email, icon: "ti-mail" },
     { label: "Country", value: userData.country, icon: "ti-map-pin" },
@@ -199,9 +202,8 @@ function ProfilePage() {
           {fields.map(({ label, value, icon }, i) => (
             <div
               key={label}
-              className={`flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors ${
-                i < fields.length - 1 ? "border-b border-white/[0.05]" : ""
-              }`}
+              className={`flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors ${i < fields.length - 1 ? "border-b border-white/[0.05]" : ""
+                }`}
             >
               <div className="w-8 h-8 rounded-[8px] bg-white/[0.04] border border-white/[0.07] flex items-center justify-center flex-shrink-0">
                 {/* swap for actual SVG icons or an icon font */}

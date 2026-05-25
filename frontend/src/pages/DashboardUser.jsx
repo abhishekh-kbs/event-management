@@ -31,7 +31,7 @@ function DashboardUser() {
   useEffect(() => {
     async function checkApplications() {
       try {
-        const res = await fetch(`${apiUrl}/api/registrations/my-applications`, {
+        const res = await fetch(`${apiUrl}/registrations/my-applications`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

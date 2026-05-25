@@ -69,7 +69,7 @@ function EventsPage() {
       });
       if (res.ok) setEventsList((prev) => prev.filter((e) => e.id !== id));
     } catch (err) {
-      console.error(err);
+      console.log(err);
     }
   }
 
@@ -87,7 +87,7 @@ function EventsPage() {
         : [];
       setApplicants((prev) => ({ ...prev, [eventId]: list }));
     } catch (err) {
-      console.error(err);
+      console.log(err);
     }
   }
 
@@ -120,7 +120,7 @@ function EventsPage() {
       setEventsList(data.data);
       console.log(data.data);
     } catch (err) {
-      console.error(err);
+      console.log(err);
     } finally {
       setLoadingEvents(false);
     }
@@ -157,7 +157,7 @@ function EventsPage() {
         setShowForm(false);
       }
     } catch (err) {
-      console.error(err);
+      console.log(err);
     }
   }
 
@@ -198,7 +198,7 @@ function EventsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          venueName: editformdata.venue,
+          venueAddress: editformdata.venue,
           eventDate: editformdata.date,
           fullDescription: editformdata.description,
           city: editformdata.city,
@@ -211,7 +211,7 @@ function EventsPage() {
       setShowEditForm(false);
       setEditingEvent(null);
     } catch (err) {
-      console.error(err);
+      console.log(err);
     }
   }
 
