@@ -17,7 +17,7 @@ module.exports = {
 
       razorpay_payment_id: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: true
       },
 
       razorpay_signature: {
