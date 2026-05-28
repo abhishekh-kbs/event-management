@@ -5,7 +5,8 @@ const { getAllProducts, getProductById, createProduct, getAllCartProductByUserId
 
 router.get('/product', getAllProducts);
 router.get('/product/:id', verifyToken, getProductById);
-router.post('/create-products', verifyToken, createProduct);
+router.post('/create-product', verifyToken, createProduct);
+// router.patch('/update-product', verifyToken, updateProduct);
 
 
 router.get('/cart', getAllCartProduct);

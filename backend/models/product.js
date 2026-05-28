@@ -21,12 +21,15 @@ module.exports = (sequelize, DataTypes) => {
     category: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     }
   });
 
   Product.associate = (models) => {
     Product.belongsTo(models.User, { foreignKey: "userId" });
-    Product.hasMany(models.Cart, { foreignKey: "productId" });
   };
 
   return Product;

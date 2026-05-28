@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
 
         razorpay_order_id: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
 
         razorpay_payment_id: {
@@ -53,7 +53,7 @@ module.exports = (sequelize, DataTypes) => {
 
         amount: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
 
         currency: {

@@ -6,12 +6,29 @@ const { errorResponse, successResponse } = require("../utils/responseHelper");
 
 const createOrder = async (req, res, next) => {
     try {
-        console.log('KEY_ID     :', process.env.RAZORPAY_KEY_ID);
-        console.log('KEY_SECRET :', process.env.RAZORPAY_KEY_SECRET);
+        const { productId, cartId } = req.body;
+        const { userId } = req.user.id;
+
+        let amount;
+        let purchaseType;
+        let receipt;
+
+        if (cartId) {
+            purchaseType = 'cart';
+
+            const cartItem = await Cart.findAll({
+                where: { userId },
+                include: [
+                    { model: Product }
+                ]
+            })
+
+            if (!cartItem.length) {
+                return errorResponse(res, "Item not found", 500)
+            }
 
 
-        const { amount } = req.body;
-        const { id } = req.params;
+        }
 
         const product = await Product.findOne({ where: { id: req.params.id } });
 
@@ -20,7 +37,9 @@ const createOrder = async (req, res, next) => {
             return errorResponse(res, "product not found", 500)
         }
 
-        if (product.priceAmount === 0) {
+        const price = product.price
+
+        if (product.price === 0) {
             return errorResponse(res, "product is already free", 500)
         }
 
@@ -38,7 +57,7 @@ const createOrder = async (req, res, next) => {
         // })
 
         const razorpayOrder = await razorpay.orders.create({
-            amount: Math.round(amount * 100),  // razorpay always accept payments converted into paise
+            amount: Math.round(price * 100),  // razorpay always accept payments converted into paise
             currency: product.priceCurrency || 'INR',
             receipt: `receipt_product_${id}_user_${req.user.id}`
         });
@@ -81,6 +100,12 @@ const verifyPayments = async (req, res, next) => {
             .digest('hex');
 
         console.log('expectedSignature: ', expectedSignature)
+        console.log({
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            body
+        });
 
         if (expectedSignature !== razorpay_signature) {
             return errorResponse(res, "Invalid payment signature", 400);
@@ -94,11 +119,20 @@ const verifyPayments = async (req, res, next) => {
             return errorResponse(res, "Already registered", 400)
         };
 
+        const order = await Order.findOne({
+            where: { razorpay_order_id }
+        })
+
+        if (!order) {
+            return errorResponse(res, 'Order not found', 404);
+        }
+
         await Order.update(
             {
                 razorpay_payment_id: razorpay_payment_id,
                 razorpay_signature: razorpay_signature,
-                paymentStatus: 'pending'
+                amount: order.amount,
+                paymentStatus: 'paid'
             },
             {
                 where: { razorpay_order_id: razorpay_order_id }
@@ -108,9 +142,20 @@ const verifyPayments = async (req, res, next) => {
         await ProductOrder.create({
             userId: req.user.id,
             productId,
+            razorpay_order_id,
+            amount: order.amount,
             paymentId: razorpay_payment_id,
+            signature: razorpay_signature,
             paymentStatus: 'paid'
         });
+
+        await Cart.destroy({
+            where: {
+                userId: req.user.id,
+                productId: product
+            }
+        })
+
 
         return successResponse(res, true, "Payment verified and registration successful");
 

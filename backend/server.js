@@ -33,7 +33,7 @@ const io = new Server(server, {
     cors: {
         origin: [
             'http://localhost:5173',
-            'http://192.168.5.164:5173'
+            'http://192.168.5.155:5173'
         ],
         methods: ['GET', 'POST'],
         credentials: true
@@ -80,7 +80,7 @@ app.use(
 app.use(cors({
     origin: [
         'http://localhost:5173',
-        'http://192.168.5.164:5173'
+        'http://192.168.5.155:5173'
     ],
     credentials: true
 }));

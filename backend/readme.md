@@ -39,3 +39,20 @@ DB migrations
 Frontend payment modal
 Cart feature
 Waitlist hook into payments
+
+
+
+Dummy 
+
+{
+    "name":"Abhishekh",
+    "description":"Hello world",
+    "quantity": 1,
+    "price":"800",
+    "category":"tech"
+}
+
+
+http://localhost:4000/api/create-product
+http://localhost:4000/api/add-to-cart
+http://localhost:4000/api/remove-from-cart

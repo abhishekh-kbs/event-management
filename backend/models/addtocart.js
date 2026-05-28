@@ -33,7 +33,7 @@ module.exports = (sequelize, DataTypes) => {
 
 };
 
-
+// npx sequelize-cli migration:create --name add-productId--to-table
 
 
 
