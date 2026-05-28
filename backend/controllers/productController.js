@@ -1,4 +1,4 @@
-const { Product, Cart } = require("../models");
+const { Product, Cart, User } = require("../models");
 const { successResponse, errorResponse } = require("../utils/responseHelper");
 
 const getAllProducts = async (req, res) => {
@@ -23,6 +23,43 @@ const getProductById = async (req, res) => {
     }
     catch (err) {
         return errorResponse(res, `Internal Server Error: ${err.message}`);
+    }
+}
+
+const updateProduct = async (req, res) => {
+    try {
+        const { name, description, price, category, quantity } = req.body;
+
+        const product = await Product.findByPk(productId);
+
+        if (!product) {
+            return errorResponse(res, "Product not found", 400);
+        }
+
+        const oldProductData = {
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            category: product.price,
+            quantity: product.quantity
+        }
+
+        await product.update({
+            name, description, price, category, quantity
+        });
+
+        return errorResponse(res, "Product updated successfully", {
+            product: {
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                category: product.price,
+                quantity: product.quantity
+            }
+        })
+    }
+    catch (err) {
+        return errorResponse(res, `Internal Server Error: ${err.message}`)
     }
 }
 
@@ -55,61 +92,10 @@ const createProduct = async (req, res) => {
     }
 }
 
-// const updateProduct = async (req, res) => {
-//     try {
-//         const { name, description, price, category, quantity } = req.body;
-
-//         const user = req.query;
-
-//         const product = await Product.findByPk(productId);
-//         if (!product) {
-//             return errorResponse(res, "Product not found", 400);
-//         }
-
-//         const oldProductData = {
-//             name: product.name,
-//             description: product.description,
-//             price: product.price,
-//             category: product.price,
-//             quantity: product.quantity
-//         }
-
-//         await product.update({
-//             name, description, price, category, quantity
-//         });
-
-//         return errorResponse(res, "Product updated successfully", {
-//             product: {
-//                 name: product.name,
-//                 description: product.description,
-//                 price: product.price,
-//                 category: product.price,
-//                 quantity: product.quantity
-//             }
-//         })
-//     }
-//     catch (err) {
-//         return errorResponse(res, `Internal Server Error: ${err.message}`)
-//     }
-// }
-
 const getAllCartProduct = async (req, res) => {
     try {
         const cartProduct = await Cart.findAll();
         return successResponse(res, "Cart fetched", cartProduct);
-    }
-    catch (err) {
-        return errorResponse(res, `Internal Server Error: ${err.message}`);
-    }
-}
-
-const getAllCartProductByUserId = async (req, res) => {
-    try {
-        const userId = req.query;
-
-        const cartProduct = await Cart.findAll(userId);
-
-        return successResponse(res, "Cart fetched of the user", cartProduct);
     }
     catch (err) {
         return errorResponse(res, `Internal Server Error: ${err.message}`);
@@ -127,7 +113,15 @@ const addToCart = async (req, res) => {
             return errorResponse(res, "Product not found", 400);
         }
 
-        const price = Number(product.price) * Number(quantity);
+        if (Number(quantity) > product.quantity) {
+            return errorResponse(
+                res,
+                "Requested quantity cannot be more than available products",
+                400
+            );
+        }
+
+        // const price = Number(product.price) * Number(quantity);
 
         let cartItem = await Cart.findOne({
             where: { userId, productId },
@@ -153,12 +147,14 @@ const addToCart = async (req, res) => {
             cartItem = await Cart.create({
                 userId,
                 productId,
+                name: product.name,
                 quantity: quantity,
                 description: product.description,
                 price: product.price
             });
         }
 
+        // npx sequelize-cli migration:create --name add-quantity--to-Product
 
         const cartItems = await Cart.findAll({
             where: { userId },
@@ -170,35 +166,28 @@ const addToCart = async (req, res) => {
             ]
         })
 
-        const total = cartItems.reduce((sum, item) => {
+        const cartTotal = cartItems.reduce((sum, item) => {
             return sum + (item.Product.price * item.quantity);
         }, 0);
+
+        // const total = Number(cartItems.price * product.quanity);
+        const itemTotal =
+            Number(cartItem.price) * Number(cartItem.quantity);
 
         // const total = cartItems.reduce((sum, item) => {
         //     return sum + price;
         // }, 0);
 
-
-
         return successResponse(res, "Item successfully added to cart", {
             cartItem,
-            total
+            cartTotal,
+            itemTotal
         });
     }
     catch (err) {
         return errorResponse(res, `Internal Server Error: ${err.message}`);
     }
 }
-
-// const cartDetailOfUser = async (req, res) => {
-//     try {
-//         const { userId, productId } = req.query;
-
-//     }
-//     catch (err) {
-//         return errorResponse(res, `Internal Server Error: ${err.message}`)
-//     }
-// }
 
 const removeFromCart = async (req, res) => {
     try {
@@ -210,7 +199,6 @@ const removeFromCart = async (req, res) => {
         const cartItem = await Cart.findOne({
             where: { productId }
         });
-        const price = Number(cartItem.price);
 
         if (!cartItem) return errorResponse(res, "Item is not available in the cart")
 
@@ -222,34 +210,20 @@ const removeFromCart = async (req, res) => {
         }
 
         cartItem.quantity -= quantity;
-        await cartItem.save();
-
 
         if (cartItem.quantity == 0) {
             await cartItem.destroy();
             return successResponse(res, "Item completely removed from the cart", null);
         }
 
-        const cartItems = await Cart.findAll({
-            where: { userId },
-            include: [
-                {
-                    model: Product,
-                    attributes: ['price']
-                }
-            ]
-        })
-
-        const total = cartItems.reduce((sum, item) => {
-            return sum - (item.Product.price * item.quantity);
-        }, 0);
+        await cartItem.save();
 
 
+        const itemTotal = Number(cartItem.price) * Number(cartItem.quantity);
 
         return successResponse(res, "Item removed from the cart", {
             cartItem,
-            price,
-            total
+            itemTotal
         });
     }
     catch (err) {
@@ -258,7 +232,51 @@ const removeFromCart = async (req, res) => {
 
 }
 
-module.exports = { getAllProducts, getProductById, getAllCartProductByUserId, createProduct, addToCart, removeFromCart, getAllCartProduct };
+const getAllCartProductByUserId = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const cartProduct = await Cart.findAll({
+            where: { userId }
+        });
+
+        if (cartProduct.length === 0) {
+            return errorResponse(res, "No product in the cart");
+        }
+
+        const updatedCart = cartProduct.map((item) => {
+            const item_total_price = Number(item.price) * Number(item.quantity);
+
+            return {
+                cartId: item.id,
+                productId: item.productId,
+                name: item.name,
+                quantity: item.quantity,
+                description: item.description,
+                price: item.price,
+                item_total_price,
+                user: {
+                    id: userId,
+                }
+            }
+        })
+
+        const cart_total_price = updatedCart.reduce((sum, item) => {
+            return sum + item.itemTotal;
+        }, 0);
+
+        return successResponse(res, "Cart fetched of the user", {
+            cartProduct: updatedCart
+        })
+    }
+    catch (err) {
+        return errorResponse(res, `Internal Server Error: ${err.message}`);
+    }
+}
+
+
+
+module.exports = { getAllProducts, getProductById, createProduct, updateProduct, addToCart, removeFromCart, getAllCartProductByUserId };
 
 
 // npx sequelize-cli migration:create --name add-quantity--to-Profduct
