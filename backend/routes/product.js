@@ -174,7 +174,7 @@ const { getAllProducts, getProductById, createProduct, updateProduct, getAllCart
 router.get('/products', getAllProducts);
 router.get('/products/:id', verifyToken, getProductById);
 router.post('/create-product', verifyToken, createProduct);
-router.put('/update-product', verifyToken, updateProduct);
+router.put('/update-product/:productId', verifyToken, updateProduct);
 
 
 router.post('/add-to-cart', verifyToken, addToCart);

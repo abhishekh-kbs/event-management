@@ -47,6 +47,7 @@ module.exports = {
         billingAddress: 'Old Airport Rd, Bangalore',
         createdAt: new Date(),
         updatedAt: new Date()
+
       },
       {
         eventCode: 'EVT-002',

@@ -28,35 +28,30 @@ const getProductById = async (req, res) => {
 
 const updateProduct = async (req, res) => {
     try {
+        const { productId } = req.params;
+
         const { name, description, price, category, quantity } = req.body;
 
-        const product = await Product.findByPk(productId);
+        const product = await Product.findOne({
+            where: { id: productId }
+        });
 
         if (!product) {
             return errorResponse(res, "Product not found", 400);
         }
 
-        const oldProductData = {
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            category: product.price,
-            quantity: product.quantity
-        }
+        const updatedData = {};
 
-        await product.update({
-            name, description, price, category, quantity
-        });
+        if (name !== undefined) updatedData.name = name
+        if (description !== undefined) updatedData.description = description
+        if (price !== undefined) updatedData.price = price
+        if (category !== undefined) updatedData.category = category
+        if (quantity !== undefined) updatedData.quantity = quantity
 
-        return errorResponse(res, "Product updated successfully", {
-            product: {
-                name: product.name,
-                description: product.description,
-                price: product.price,
-                category: product.price,
-                quantity: product.quantity
-            }
-        })
+
+        await product.update(updatedData)
+
+        return successResponse(res, "Product updated successfully", product)
     }
     catch (err) {
         return errorResponse(res, `Internal Server Error: ${err.message}`)
