@@ -270,4 +270,4 @@ router.delete('/delete', deleteBtnLimiter, verifyToken, deleteUser);
 
 module.exports = router;
 
-// npx sequelize-cli migration:generate --name create-account-deletion-feedbacks
+// npx sequelize-cli migration:generate --name create-product-deletion-feedbacks

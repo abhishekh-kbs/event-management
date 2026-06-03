@@ -39,6 +39,74 @@ const events = async (req, res) => {
     }
 }
 
+const createEvent = async (req, res) => {
+    try {
+
+        const {
+            title, organizer, category, username,
+            venueName, venueAddress, venueMapLink,
+            priceAmount, priceCurrency, isEarlyBird, eventTimeStart, eventTimeEnd, numberOfGuests,
+            capacityTotal, eventDate, city,
+            shortDescription, fullDescription,
+            agenda, prerequisites, tags, registrationDeadline, visibleFrom, bookingOpenDate
+        } = req.body;
+
+        const fileUpload = req.file
+            ? `uploads/${req.file.filename}`
+            : null; // condition ? value_if_true : value_if_false
+
+        const event = await Event.create({
+            eventCode: generateEventCode(),
+            // --- plain text fields ---
+            title: clean(title),
+            organizer: clean(organizer),
+            category: clean(category),
+            username: clean(username),
+            venueName: clean(venueName),
+            venueAddress: clean(venueAddress),
+            city: clean(city),
+            prerequisites: clean(prerequisites),
+            tags: clean(tags),
+
+            // --- rich text fields (allow basic formatting) ---
+            shortDescription: clean(shortDescription, richText),
+            fullDescription: clean(fullDescription, richText),
+            agenda: clean(agenda, richText),
+
+            // --- these don't need sanitization, just pass through ---
+            venueMapLink,        // URL — validate separately if needed
+            priceAmount,         // number
+            priceCurrency,       // number/code
+            isEarlyBird,         // boolean
+            eventTimeStart,      // date
+            eventTimeEnd,        // date
+            numberOfGuests,      // number
+            capacityTotal,       // number
+            capacityRemaining: capacityTotal,
+            eventDate,           // date
+            registrationDeadline,
+            visibleFrom,
+            bookingOpenDate,
+            fileUpload,
+            userId: req.user.id
+        });
+
+        creatorLogActivity(req, {
+            user: event.userId,
+            eventCode: event.eventCode,
+            organizer: event.organizer,
+            action: 'EVENT_CREATED',
+            role: req.user.role
+        });
+
+        return successResponse(res, "Event created", event);
+    }
+
+    catch (err) {
+        return errorResponse(res, `Internal Server Error: ${err.message}`);
+    }
+};
+
 const getAllEvents = async (req, res) => {
     try {
         const page = Number(req.query.page) || 1;
@@ -324,7 +392,7 @@ const getMyEvents = async (req, res) => {
         });
 
         if (events.length === 0) {
-            return errorResponse(res, "No events posted yet", []);
+            return errorResponse(res, "No events posted yet", 400);
         }
 
         function to24Hour(timeStr) {
@@ -372,74 +440,6 @@ const getMyEvents = async (req, res) => {
     }
 }
 
-const createEvent = async (req, res) => {
-    try {
-
-        const {
-            title, organizer, category, username,
-            venueName, venueAddress, venueMapLink,
-            priceAmount, priceCurrency, isEarlyBird, eventTimeStart, eventTimeEnd, numberOfGuests,
-            capacityTotal, eventDate, city,
-            shortDescription, fullDescription,
-            agenda, prerequisites, tags, registrationDeadline, visibleFrom, bookingOpenDate
-        } = req.body;
-
-        const fileUpload = req.file
-            ? `uploads/${req.file.filename}`
-            : null; // condition ? value_if_true : value_if_false
-
-        const event = await Event.create({
-            eventCode: generateEventCode(),
-            // --- plain text fields ---
-            title: clean(title),
-            organizer: clean(organizer),
-            category: clean(category),
-            username: clean(username),
-            venueName: clean(venueName),
-            venueAddress: clean(venueAddress),
-            city: clean(city),
-            prerequisites: clean(prerequisites),
-            tags: clean(tags),
-
-            // --- rich text fields (allow basic formatting) ---
-            shortDescription: clean(shortDescription, richText),
-            fullDescription: clean(fullDescription, richText),
-            agenda: clean(agenda, richText),
-
-            // --- these don't need sanitization, just pass through ---
-            venueMapLink,        // URL — validate separately if needed
-            priceAmount,         // number
-            priceCurrency,       // number/code
-            isEarlyBird,         // boolean
-            eventTimeStart,      // date
-            eventTimeEnd,        // date
-            numberOfGuests,      // number
-            capacityTotal,       // number
-            capacityRemaining: capacityTotal,
-            eventDate,           // date
-            registrationDeadline,
-            visibleFrom,
-            bookingOpenDate,
-            fileUpload,
-            userId: req.user.id
-        });
-
-        creatorLogActivity(req, {
-            user: event.userId,
-            eventCode: event.eventCode,
-            organizer: event.organizer,
-            action: 'EVENT_CREATED',
-            role: req.user.role
-        });
-
-        return successResponse(res, "Event created", event);
-    }
-
-    catch (err) {
-        return errorResponse(res, `Internal Server Error: ${err.message}`);
-    }
-};
-
 const updateEvent = async (req, res) => {
     try {
 
@@ -451,14 +451,11 @@ const updateEvent = async (req, res) => {
         });
 
         if (!event) {
-            return errorResponse(res, "Event not found", 404);
+            return errorResponse(res, "Event does not exist", 404);
         }
         if (event.userId !== req.user.id) {
-            return errorResponse(res, "Not authorized", 403);
+            return errorResponse(res, "Not authorized, only the owner can update the event", 403);
         }
-
-        // await event.update(req.body); // venue city date description
-
 
         const registrations = await Registration.findAll({
             where: {
@@ -467,50 +464,39 @@ const updateEvent = async (req, res) => {
             }
         });
 
-        const {
-            title, organizer, category, username,
-            venueName, venueAddress, venueMapLink,
-            priceAmount, priceCurrency, isEarlyBird, eventTimeStart, eventTimeEnd, numberOfGuests,
-            capacityTotal, eventDate, city,
-            shortDescription, fullDescription,
-            agenda, prerequisites, tags, registrationDeadline, visibleFrom, bookingOpenDate
-        } = req.body;
+        const allowedFields = [
+            "title",
+            "organizer",
+            "category",
+            "username",
+            "venueName",
+            "venueAddress",
+            "priceAmount",
+            "eventTimeStart",
+            "eventTimeEnd",
+            "numberOfGuests",
+            "capacityTotal",
+            "eventDate",
+            "city",
+            "shortDescription",
+            "fullDescription",
+            "agenda",
+            "prerequisites",
+            "tags",
+            "registrationDeadline",
+            "visibleFrom",
+            "bookingOpenDate"
+        ]
 
-        const updateEvent = await event.update({
-            // eventCode: generateEventCode(),
-            // // --- plain text fields ---
-            // title: clean(title),
-            // organizer: clean(organizer),
-            // category: clean(category),
-            // username: clean(username),
-            venueName: clean(venueName),
-            venueAddress: clean(venueAddress),
-            city: clean(city),
-            // prerequisites: clean(prerequisites),
-            // tags: clean(tags),
+        const updateData = {};
 
-            // // --- rich text fields (allow basic formatting) ---
-            // shortDescription: clean(shortDescription, richText),
-            fullDescription: clean(fullDescription, richText),
-            // agenda: clean(agenda, richText),
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updateData[field] = req.body[field];
+            }
+        }
 
-            // // --- these don't need sanitization, just pass through ---
-            // venueMapLink,        // URL — validate separately if needed
-            // priceAmount,         // number
-            // priceCurrency,       // number/code
-            // isEarlyBird,         // boolean
-            // eventTimeStart,      // date
-            // eventTimeEnd,        // date
-            // numberOfGuests,      // number
-            // capacityTotal,       // number
-            // capacityRemaining: capacityTotal,
-            eventDate,           // date
-            // registrationDeadline,
-            // visibleFrom,
-            // bookingOpenDate,
-            // fileUpload,
-            // userId: req.user.id
-        });
+        const updateEvent = await event.update(updateData);
 
         for (const reg of registrations) {
             await createAndSendNotification(
@@ -571,6 +557,10 @@ const deleteEvent = async (req, res) => {
             return errorResponse(res, 'Event not found', 404);
         }
 
+        if (event.isDeleted) {
+            return errorResponse(res, 'Event has already been deleted', 400)
+        }
+
 
         const owner = await User.findByPk(loggedInUserId);
         if (!owner) {
@@ -596,6 +586,17 @@ const deleteEvent = async (req, res) => {
             deletedAt: new Date()
         });
 
+        // const cancelledRegistration = await Registration.findOne({
+        //     where: {
+        //         eventId: event.id,
+        //         status: 'cancelled'
+        //     }
+        // });
+
+        // if (cancelledRegistration) {
+        //     return errorResponse(res, "Registration was already cancelled", 400);
+        // }
+
         const registrations = await Registration.findAll({
             where: {
                 eventId: event.id,
@@ -603,7 +604,12 @@ const deleteEvent = async (req, res) => {
             }
         });
 
+
         for (const reg of registrations) {
+
+            await reg.update({
+                status: 'cancelled'
+            })
             await createAndSendNotification(
                 reg.userId,
                 'EVENT_DELETED',
@@ -634,7 +640,7 @@ const deleteEvent = async (req, res) => {
             role: req.user.role
         });
 
-        return successResponse(res, 'Event deleted');
+        return successResponse(res, 'Event deleted successfully', 200);
 
     } catch (err) {
         return errorResponse(res, `Internal Server error: ${err.message}`);

@@ -39,8 +39,8 @@ Object.keys(db).forEach(modelName => {
   }
 });
 
-db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+db.sequelize = sequelize;
 
 // associations
 db.User.hasMany(db.Event, { foreignKey: 'userId' });
@@ -54,9 +54,6 @@ db.Registration.belongsTo(db.Event, { foreignKey: 'eventId' });
 
 db.User.hasMany(db.Notification, { foreignKey: 'userId' });
 db.Notification.belongsTo(db.User, { foreignKey: 'userId' });
-
-
-
 
 module.exports = db;
 

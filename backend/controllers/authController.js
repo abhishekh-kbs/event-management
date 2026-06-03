@@ -268,14 +268,6 @@ const updateProfile = async (req, res, next) => {
             updatedFields.push(`bio from "${oldData.bio}" to "${bio}"`);
         }
 
-        // if (oldData.notifyEmail !== notifyEmail) {
-        //     updatedFields.push(`email notification preference from "${oldData.notifyEmail}" to "${notifyEmail}"`);
-        // }
-
-        // if (oldData.notifyPush !== notifyPush) {
-        //     updatedFields.push(`push notification preference from "${oldData.notifyPush}" to "${notifyPush}"`);
-        // }
-
         const message = `Hi ${user.username}, your profile was updated.`;
 
 

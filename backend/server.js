@@ -9,7 +9,7 @@ const db = require('./models');
 const path = require('path');
 const registrationRoutes = require('./routes/registration');
 const pg = require('pg');
-const { scheduleUserCleanup, scheduleEventCleanup, accountDeletionFeedbackCleanup } = require('./utils/cleanupUsers');
+const { scheduleUserCleanup, scheduleEventCleanup, accountDeletionFeedbackCleanup, scheduleProductCleanup } = require('./utils/cleanupUsers');
 const { startEventReminder } = require('./utils/eventReminder.js');
 const { connectedUsers, setIO } = require('./utils/socketStore');
 const swaggerUi = require('swagger-ui-express');
@@ -109,11 +109,14 @@ scheduleUserCleanup();
 scheduleEventCleanup();
 accountDeletionFeedbackCleanup();
 startEventReminder();
+scheduleProductCleanup();
 
 const PORT = process.env.PORT || 4000;
 
 const startServer = async () => {
     try {
+        // console.log(db);
+        // console.log(db.sequelize);
         await db.sequelize.authenticate();
         console.log("DB connected");
 

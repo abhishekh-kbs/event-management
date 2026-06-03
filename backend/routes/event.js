@@ -301,7 +301,7 @@
 /**
  * @swagger
  * /api/events/{id}:
- *   put:
+ *   patch:
  *     summary: Update event
  *     tags: [Events]
  *     security:

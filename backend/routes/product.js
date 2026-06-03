@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /api/products:
+ * /api/product:
  *   get:
  *     summary: Get all products
  *     tags: [Products]
@@ -22,7 +22,7 @@
 
 /**
  * @swagger
- * /api/products/{id}:
+ * /api/product/{id}:
  *   get:
  *     summary: Get products by ID
  *     tags: [Products]
@@ -169,12 +169,14 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require("../middleware/authMiddleware");
-const { getAllProducts, getProductById, createProduct, updateProduct, getAllCartProductByUserId, addToCart, removeFromCart, getAllCartProduct } = require('../controllers/productController');
+const { getAllProducts, getProductById, createProduct, getMyProduct, updateProduct, deleteProduct, getAllCartProductByUserId, addToCart, removeFromCart, getAllCartProduct } = require('../controllers/productController');
 
-router.get('/products', getAllProducts);
-router.get('/products/:id', verifyToken, getProductById);
+router.get('/product', getAllProducts);
+router.get('/product/my-product', verifyToken, getMyProduct);
 router.post('/create-product', verifyToken, createProduct);
 router.put('/update-product/:productId', verifyToken, updateProduct);
+router.get('/product/:id', verifyToken, getProductById);
+router.delete('/delete/:productId', verifyToken, deleteProduct);
 
 
 router.post('/add-to-cart', verifyToken, addToCart);

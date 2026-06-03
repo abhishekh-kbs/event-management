@@ -25,7 +25,9 @@ module.exports = (sequelize, DataTypes) => {
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false
-    }
+    },
+    isDeleted: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+    deletedAt: { type: DataTypes.DATE, allowNull: true }
   });
 
   Product.associate = (models) => {
@@ -34,3 +36,5 @@ module.exports = (sequelize, DataTypes) => {
 
   return Product;
 };
+
+// npx sequelize-cli migration:create --name add-itemTotal--to-Cart

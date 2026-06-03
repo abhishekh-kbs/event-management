@@ -77,4 +77,27 @@ const scheduleEventCleanup = () => {
     })
 }
 
-module.exports = { scheduleUserCleanup, scheduleEventCleanup, accountDeletionFeedbackCleanup };
+const scheduleProductCleanup = () => {
+    cron.schedule('0 0 * * *', async () => {
+        try {
+            const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+
+            const deleted = await Product.unscoped().destroy({
+                where: {
+                    isDeleted: true,
+                    deletedAt: {
+                        [Op.lte]: threeDaysAgo
+                    }
+                },
+                force: true,
+            });
+
+            console.log('Permanantly deleted all the products which were soft deleted 3 days ago')
+        }
+        catch (err) {
+            return errorResponse(res, `Internal Server error: ${err.message}`)
+        }
+    })
+}
+
+module.exports = { scheduleUserCleanup, scheduleEventCleanup, accountDeletionFeedbackCleanup, scheduleProductCleanup };

@@ -56,3 +56,7 @@ module.exports = {
     await queryInterface.dropTable('Users');
   }
 };
+
+
+
+// npx sequelize-cli migration:create --name add-itemTotal--to-Cart
