@@ -6,31 +6,14 @@ const { errorResponse, successResponse } = require("../utils/responseHelper");
 
 const createOrder = async (req, res, next) => {
     try {
-        const { productId, cartId } = req.body;
-        const { userId } = req.user.id;
+        const { productId } = req.body;
+        const userId = req.user.id;
 
         let amount;
         let purchaseType;
         let receipt;
 
-        if (cartId) {
-            purchaseType = 'cart';
-
-            const cartItem = await Cart.findAll({
-                where: { userId },
-                include: [
-                    { model: Product }
-                ]
-            })
-
-            if (!cartItem.length) {
-                return errorResponse(res, "Item not found", 500)
-            }
-
-
-        }
-
-        const product = await Product.findOne({ where: { id: req.params.id } });
+        const product = await Product.findOne({ where: { id: productId } });
 
 
         if (!product) {
@@ -59,7 +42,7 @@ const createOrder = async (req, res, next) => {
         const razorpayOrder = await razorpay.orders.create({
             amount: Math.round(price * 100),  // razorpay always accept payments converted into paise
             currency: product.priceCurrency || 'INR',
-            receipt: `receipt_product_${id}_user_${req.user.id}`
+            receipt: `receipt_product_${product.id}_user_${req.user.id}`
         });
 
         const order = await Order.create({
@@ -68,7 +51,7 @@ const createOrder = async (req, res, next) => {
             currency: razorpayOrder.currency,
             receipt: razorpayOrder.receipt,
             paymentStatus: 'pending',
-            productId: id,
+            productId: product.id,
         });
 
         return successResponse(res, true, {
@@ -80,7 +63,6 @@ const createOrder = async (req, res, next) => {
         next(err);
     }
 }
-
 
 // concatenation between the string of order_id and payment_id and than combining it with the signature and hashed them with HSA 256
 const verifyPayments = async (req, res, next) => {
@@ -111,13 +93,13 @@ const verifyPayments = async (req, res, next) => {
             return errorResponse(res, "Invalid payment signature", 400);
         }
 
-        const existing = await ProductOrder.findOne({
-            where: { userId: req.user.id, productId }
-        });
+        // const existing = await ProductOrder.findOne({
+        //     where: { userId: req.user.id, productId }
+        // });
 
-        if (existing) {
-            return errorResponse(res, "Already registered", 400)
-        };
+        // if (existing) {
+        //     return errorResponse(res, "Already registered", 400)
+        // };
 
         const order = await Order.findOne({
             where: { razorpay_order_id }
@@ -149,13 +131,12 @@ const verifyPayments = async (req, res, next) => {
             paymentStatus: 'paid'
         });
 
-        await Cart.destroy({
-            where: {
-                userId: req.user.id,
-                productId: product
-            }
-        })
-
+        // await Cart.destroy({
+        //     where: {
+        //         userId: req.user.id,
+        //         productId: product
+        //     }
+        // })
 
         return successResponse(res, true, "Payment verified and registration successful");
 

@@ -85,6 +85,9 @@ app.use(cors({
     credentials: true
 }));
 
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
+
 app.use(express.json());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -119,6 +122,7 @@ const startServer = async () => {
         // console.log(db.sequelize);
         await db.sequelize.authenticate();
         console.log("DB connected");
+
 
         await connectRedis();
 
